@@ -16,6 +16,8 @@ const NullDependency = require("./NullDependency");
 /** @typedef {import("../DependencyTemplate").DependencyTemplateContext} DependencyTemplateContext */
 /** @typedef {import("../Module")} Module */
 /** @typedef {import("../ModuleGraph")} ModuleGraph */
+/** @typedef {import("../serialization/ObjectMiddleware").ObjectDeserializerContext} ObjectDeserializerContext */
+/** @typedef {import("../serialization/ObjectMiddleware").ObjectSerializerContext} ObjectSerializerContext */
 /** @typedef {import("../util/Hash")} Hash */
 /** @typedef {import("../util/runtime").RuntimeSpec} RuntimeSpec */
 
@@ -46,6 +48,12 @@ const getProperty = (moduleGraph, module, exportName, property, runtime) => {
 		}
 	}
 	switch (property) {
+		case "canMangle": {
+			const exportsInfo = moduleGraph.getExportsInfo(module);
+			const exportInfo = exportsInfo.getExportInfo(exportName);
+			if (exportInfo) return exportInfo.canMangle;
+			return exportsInfo.otherExportsInfo.canMangle;
+		}
 		case "used":
 			return (
 				moduleGraph.getExportsInfo(module).getUsed(exportName, runtime) !==
@@ -83,6 +91,9 @@ class ExportsInfoDependency extends NullDependency {
 		this.property = property;
 	}
 
+	/**
+	 * @param {ObjectSerializerContext} context context
+	 */
 	serialize(context) {
 		const { write } = context;
 		write(this.range);

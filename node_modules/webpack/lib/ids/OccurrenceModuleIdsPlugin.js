@@ -9,7 +9,10 @@ const {
 	compareModulesByPreOrderIndexOrIdentifier
 } = require("../util/comparators");
 const createSchemaValidation = require("../util/create-schema-validation");
-const { assignAscendingModuleIds } = require("./IdHelpers");
+const {
+	assignAscendingModuleIds,
+	getUsedModuleIdsAndModules
+} = require("./IdHelpers");
 
 /** @typedef {import("../../declarations/plugins/ids/OccurrenceModuleIdsPlugin").OccurrenceModuleIdsPluginOptions} OccurrenceModuleIdsPluginOptions */
 /** @typedef {import("../Compiler")} Compiler */
@@ -44,15 +47,11 @@ class OccurrenceModuleIdsPlugin {
 		compiler.hooks.compilation.tap("OccurrenceModuleIdsPlugin", compilation => {
 			const moduleGraph = compilation.moduleGraph;
 
-			compilation.hooks.moduleIds.tap("OccurrenceModuleIdsPlugin", modules => {
+			compilation.hooks.moduleIds.tap("OccurrenceModuleIdsPlugin", () => {
 				const chunkGraph = compilation.chunkGraph;
 
-				const modulesInOccurrenceOrder = Array.from(modules).filter(
-					m =>
-						m.needId &&
-						chunkGraph.getNumberOfModuleChunks(m) > 0 &&
-						chunkGraph.getModuleId(m) === null
-				);
+				const [usedIds, modulesInOccurrenceOrder] =
+					getUsedModuleIdsAndModules(compilation);
 
 				const occursInInitialChunksMap = new Map();
 				const occursInAllChunksMap = new Map();
@@ -82,7 +81,7 @@ class OccurrenceModuleIdsPlugin {
 					] of moduleGraph.getIncomingConnectionsByOriginModule(module)) {
 						if (!originModule) continue;
 						if (!connections.some(c => c.isTargetActive(undefined))) continue;
-						sum += initialChunkChunkMap.get(originModule);
+						sum += initialChunkChunkMap.get(originModule) || 0;
 					}
 					return sum;
 				};
@@ -121,7 +120,7 @@ class OccurrenceModuleIdsPlugin {
 					}
 				}
 
-				for (const m of modules) {
+				for (const m of modulesInOccurrenceOrder) {
 					const result =
 						countOccurs(m) +
 						chunkGraph.getNumberOfModuleChunks(m) +
@@ -147,7 +146,11 @@ class OccurrenceModuleIdsPlugin {
 					return naturalCompare(a, b);
 				});
 
-				assignAscendingModuleIds(modulesInOccurrenceOrder, compilation);
+				assignAscendingModuleIds(
+					usedIds,
+					modulesInOccurrenceOrder,
+					compilation
+				);
 			});
 		});
 	}

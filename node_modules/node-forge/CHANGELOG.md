@@ -1,6 +1,72 @@
 Forge ChangeLog
 ===============
 
+## 1.3.1 - 2022-03-29
+
+### Fixes
+- RFC 3447 and RFC 8017 allow for optional `DigestAlgorithm` `NULL` parameters
+  for `sha*` algorithms and require `NULL` paramters for `md2` and `md5`
+  algorithms.
+
+## 1.3.0 - 2022-03-17
+
+### Security
+- Three RSA PKCS#1 v1.5 signature verification issues were reported by Moosa
+  Yahyazadeh (moosa-yahyazadeh@uiowa.edu).
+- **HIGH**: Leniency in checking `digestAlgorithm` structure can lead to
+  signature forgery.
+  - The code is lenient in checking the digest algorithm structure. This can
+    allow a crafted structure that steals padding bytes and uses unchecked
+    portion of the PKCS#1 encoded message to forge a signature when a low
+    public exponent is being used. For more information, please see
+    ["Bleichenbacher's RSA signature forgery based on implementation
+    error"](https://mailarchive.ietf.org/arch/msg/openpgp/5rnE9ZRN1AokBVj3VqblGlP63QE/)
+    by Hal Finney.
+  - CVE ID: [CVE-2022-24771](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-24771)
+  - GHSA ID: [GHSA-cfm4-qjh2-4765](https://github.com/digitalbazaar/forge/security/advisories/GHSA-cfm4-qjh2-4765)
+- **HIGH**: Failing to check tailing garbage bytes can lead to signature
+  forgery.
+  - The code does not check for tailing garbage bytes after decoding a
+    `DigestInfo` ASN.1 structure. This can allow padding bytes to be removed
+    and garbage data added to forge a signature when a low public exponent is
+    being used.  For more information, please see ["Bleichenbacher's RSA
+    signature forgery based on implementation
+    error"](https://mailarchive.ietf.org/arch/msg/openpgp/5rnE9ZRN1AokBVj3VqblGlP63QE/)
+    by Hal Finney.
+  - CVE ID: [CVE-2022-24772](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-24772)
+  - GHSA ID: [GHSA-x4jg-mjrx-434g](https://github.com/digitalbazaar/forge/security/advisories/GHSA-x4jg-mjrx-434g)
+- **MEDIUM**: Leniency in checking type octet.
+  - `DigestInfo` is not properly checked for proper ASN.1 structure. This can
+    lead to successful verification with signatures that contain invalid
+    structures but a valid digest.
+  - CVE ID: [CVE-2022-24773](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-24773)
+  - GHSA ID: [GHSA-2r2c-g63r-vccr](https://github.com/digitalbazaar/forge/security/advisories/GHSA-2r2c-g63r-vccr)
+
+### Fixed
+- [asn1] Add fallback to pretty print invalid UTF8 data.
+- [asn1] `fromDer` is now more strict and will default to ensuring all input
+  bytes are parsed or throw an error. A new option `parseAllBytes` can disable
+  this behavior.
+  - **NOTE**: The previous behavior is being changed since it can lead to
+    security issues with crafted inputs. It is possible that code doing custom
+    DER parsing may need to adapt to this new behavior and optional flag.
+- [rsa] Add and use a validator to check for proper structure of parsed ASN.1
+  `RSASSA-PKCS-v1_5` `DigestInfo` data. Additionally check that the hash
+  algorithm identifier is a known value from RFC 8017
+  `PKCS1-v1-5DigestAlgorithms`. An invalid `DigestInfo` or algorithm identifier
+  will now throw an error.
+  - **NOTE**: The previous lenient behavior is being changed to be more strict
+    since it could lead to security issues with crafted inputs. It is possible
+    that code may have to handle the errors from these stricter checks.
+
+### Added
+- [oid] Added missing RFC 8017 PKCS1-v1-5DigestAlgorithms algorithm
+  identifiers:
+  - `1.2.840.113549.2.2` / `md2`
+  - `2.16.840.1.101.3.4.2.4` / `sha224`
+  - `2.16.840.1.101.3.4.2.5` / `sha512-224`
+  - `2.16.840.1.101.3.4.2.6` / `sha512-256`
+
 ## 1.2.1 - 2022-01-11
 
 ### Fixed

@@ -12,6 +12,8 @@ const NullDependency = require("./NullDependency");
 /** @typedef {import("webpack-sources").ReplaceSource} ReplaceSource */
 /** @typedef {import("../Dependency")} Dependency */
 /** @typedef {import("../DependencyTemplate").DependencyTemplateContext} DependencyTemplateContext */
+/** @typedef {import("../serialization/ObjectMiddleware").ObjectDeserializerContext} ObjectDeserializerContext */
+/** @typedef {import("../serialization/ObjectMiddleware").ObjectSerializerContext} ObjectSerializerContext */
 
 class CreateScriptUrlDependency extends NullDependency {
 	/**
@@ -24,6 +26,24 @@ class CreateScriptUrlDependency extends NullDependency {
 
 	get type() {
 		return "create script url";
+	}
+
+	/**
+	 * @param {ObjectSerializerContext} context context
+	 */
+	serialize(context) {
+		const { write } = context;
+		write(this.range);
+		super.serialize(context);
+	}
+
+	/**
+	 * @param {ObjectDeserializerContext} context context
+	 */
+	deserialize(context) {
+		const { read } = context;
+		this.range = read();
+		super.deserialize(context);
 	}
 }
 

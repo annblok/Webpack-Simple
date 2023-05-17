@@ -8,8 +8,8 @@ This package contains type definitions for Express (http://expressjs.com).
 Files were exported from https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/express-serve-static-core.
 
 ### Additional Details
- * Last updated: Tue, 11 Jan 2022 22:31:38 GMT
- * Dependencies: [@types/range-parser](https://npmjs.com/package/@types/range-parser), [@types/qs](https://npmjs.com/package/@types/qs), [@types/node](https://npmjs.com/package/@types/node)
+ * Last updated: Sat, 13 May 2023 03:32:51 GMT
+ * Dependencies: [@types/node](https://npmjs.com/package/@types/node), [@types/qs](https://npmjs.com/package/@types/qs), [@types/range-parser](https://npmjs.com/package/@types/range-parser), [@types/send](https://npmjs.com/package/@types/send)
  * Global values: none
 
 # Credits

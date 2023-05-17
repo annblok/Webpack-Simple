@@ -83,6 +83,7 @@ class RuntimeTemplate {
 		this.outputOptions = outputOptions || {};
 		this.requestShortener = requestShortener;
 		this.globalObject = getGlobalObject(outputOptions.globalObject);
+		this.contentHashReplacement = "X".repeat(outputOptions.hashDigestLength);
 	}
 
 	isIIFE() {
@@ -1031,7 +1032,7 @@ class RuntimeTemplate {
 		const codeGen = codeGenerationResults.get(module, runtime);
 		const { data } = codeGen;
 		const url = data.get("url");
-		if (url) return url;
+		if (url) return url.toString();
 		const filename = data.get("filename");
 		return publicPath + filename;
 	}

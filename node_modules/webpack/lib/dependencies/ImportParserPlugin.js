@@ -14,27 +14,44 @@ const ImportDependency = require("./ImportDependency");
 const ImportEagerDependency = require("./ImportEagerDependency");
 const ImportWeakDependency = require("./ImportWeakDependency");
 
+/** @typedef {import("../../declarations/WebpackOptions").JavascriptParserOptions} JavascriptParserOptions */
 /** @typedef {import("../ChunkGroup").RawChunkGroupOptions} RawChunkGroupOptions */
 /** @typedef {import("../ContextModule").ContextMode} ContextMode */
 
 class ImportParserPlugin {
+	/**
+	 * @param {JavascriptParserOptions} options options
+	 */
 	constructor(options) {
 		this.options = options;
 	}
 
 	apply(parser) {
+		const exportsFromEnumerable = enumerable =>
+			Array.from(enumerable, e => [e]);
 		parser.hooks.importCall.tap("ImportParserPlugin", expr => {
 			const param = parser.evaluateExpression(expr.source);
 
 			let chunkName = null;
 			/** @type {ContextMode} */
-			let mode = "lazy";
+			let mode = this.options.dynamicImportMode;
 			let include = null;
 			let exclude = null;
 			/** @type {string[][] | null} */
 			let exports = null;
 			/** @type {RawChunkGroupOptions} */
 			const groupOptions = {};
+
+			const { dynamicImportPreload, dynamicImportPrefetch } = this.options;
+			if (dynamicImportPreload !== undefined && dynamicImportPreload !== false)
+				groupOptions.preloadOrder =
+					dynamicImportPreload === true ? 0 : dynamicImportPreload;
+			if (
+				dynamicImportPrefetch !== undefined &&
+				dynamicImportPrefetch !== false
+			)
+				groupOptions.prefetchOrder =
+					dynamicImportPrefetch === true ? 0 : dynamicImportPrefetch;
 
 			const { options: importOptions, errors: commentErrors } =
 				parser.parseCommentOptions(expr.range);
@@ -122,7 +139,7 @@ class ImportParserPlugin {
 				if (importOptions.webpackInclude !== undefined) {
 					if (
 						!importOptions.webpackInclude ||
-						importOptions.webpackInclude.constructor.name !== "RegExp"
+						!(importOptions.webpackInclude instanceof RegExp)
 					) {
 						parser.state.module.addWarning(
 							new UnsupportedFeatureWarning(
@@ -131,13 +148,13 @@ class ImportParserPlugin {
 							)
 						);
 					} else {
-						include = new RegExp(importOptions.webpackInclude);
+						include = importOptions.webpackInclude;
 					}
 				}
 				if (importOptions.webpackExclude !== undefined) {
 					if (
 						!importOptions.webpackExclude ||
-						importOptions.webpackExclude.constructor.name !== "RegExp"
+						!(importOptions.webpackExclude instanceof RegExp)
 					) {
 						parser.state.module.addWarning(
 							new UnsupportedFeatureWarning(
@@ -146,7 +163,7 @@ class ImportParserPlugin {
 							)
 						);
 					} else {
-						exclude = new RegExp(importOptions.webpackExclude);
+						exclude = importOptions.webpackExclude;
 					}
 				}
 				if (importOptions.webpackExports !== undefined) {
@@ -169,22 +186,42 @@ class ImportParserPlugin {
 						if (typeof importOptions.webpackExports === "string") {
 							exports = [[importOptions.webpackExports]];
 						} else {
-							exports = Array.from(importOptions.webpackExports, e => [e]);
+							exports = exportsFromEnumerable(importOptions.webpackExports);
 						}
 					}
 				}
 			}
 
-			if (param.isString()) {
-				if (mode !== "lazy" && mode !== "eager" && mode !== "weak") {
+			if (
+				mode !== "lazy" &&
+				mode !== "lazy-once" &&
+				mode !== "eager" &&
+				mode !== "weak"
+			) {
+				parser.state.module.addWarning(
+					new UnsupportedFeatureWarning(
+						`\`webpackMode\` expected 'lazy', 'lazy-once', 'eager' or 'weak', but received: ${mode}.`,
+						expr.loc
+					)
+				);
+				mode = "lazy";
+			}
+
+			const referencedPropertiesInDestructuring =
+				parser.destructuringAssignmentPropertiesFor(expr);
+			if (referencedPropertiesInDestructuring) {
+				if (exports) {
 					parser.state.module.addWarning(
 						new UnsupportedFeatureWarning(
-							`\`webpackMode\` expected 'lazy', 'eager' or 'weak', but received: ${mode}.`,
+							`\`webpackExports\` could not be used with destructuring assignment.`,
 							expr.loc
 						)
 					);
 				}
+				exports = exportsFromEnumerable(referencedPropertiesInDestructuring);
+			}
 
+			if (param.isString()) {
 				if (mode === "eager") {
 					const dep = new ImportEagerDependency(
 						param.string,
@@ -215,21 +252,6 @@ class ImportParserPlugin {
 				}
 				return true;
 			} else {
-				if (
-					mode !== "lazy" &&
-					mode !== "lazy-once" &&
-					mode !== "eager" &&
-					mode !== "weak"
-				) {
-					parser.state.module.addWarning(
-						new UnsupportedFeatureWarning(
-							`\`webpackMode\` expected 'lazy', 'lazy-once', 'eager' or 'weak', but received: ${mode}.`,
-							expr.loc
-						)
-					);
-					mode = "lazy";
-				}
-
 				if (mode === "weak") {
 					mode = "async-weak";
 				}

@@ -166,7 +166,7 @@ declare namespace parser {
         replaceWith(...nodes: Node[]): Node;
         next(): Node;
         prev(): Node;
-        clone(opts: {[override: string]:any}): Node;
+        clone(opts?: {[override: string]:any}): Node;
         /**
          * Return whether this node includes the character at the position of the given line and column.
          * Returns undefined if the nodes lack sufficient source metadata to determine the position.
@@ -339,8 +339,16 @@ declare namespace parser {
     function selector(opts: ContainerOptions): Selector;
     function isSelector(node: any): node is Selector;
 
+    interface CombinatorRaws {
+        value?: string;
+        spaces?: {
+            before?: string;
+            after?: string;
+        };
+    }
     interface Combinator extends Base {
-        type: "combinator"
+        type: "combinator";
+        raws?: CombinatorRaws;
     }
     function combinator(opts: NodeOptions): Combinator;
     function isCombinator(node: any): node is Combinator;

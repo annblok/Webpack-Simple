@@ -11,14 +11,32 @@ const ModuleDependency = require("./ModuleDependency");
 
 /** @typedef {import("../Dependency").ReferencedExport} ReferencedExport */
 /** @typedef {import("../ModuleGraph")} ModuleGraph */
+/** @typedef {import("../serialization/ObjectMiddleware").ObjectDeserializerContext} ObjectDeserializerContext */
+/** @typedef {import("../serialization/ObjectMiddleware").ObjectSerializerContext} ObjectSerializerContext */
 /** @typedef {import("../util/runtime").RuntimeSpec} RuntimeSpec */
 
 class ContextElementDependency extends ModuleDependency {
-	constructor(request, userRequest, typePrefix, category, referencedExports) {
+	/**
+	 * @param {string} request request
+	 * @param {string|undefined} userRequest user request
+	 * @param {string} typePrefix type prefix
+	 * @param {string} category category
+	 * @param {string[][]=} referencedExports referenced exports
+	 * @param {string=} context context
+	 */
+	constructor(
+		request,
+		userRequest,
+		typePrefix,
+		category,
+		referencedExports,
+		context
+	) {
 		super(request);
 		this.referencedExports = referencedExports;
 		this._typePrefix = typePrefix;
 		this._category = category;
+		this._context = context || undefined;
 
 		if (userRequest) {
 			this.userRequest = userRequest;
@@ -52,13 +70,25 @@ class ContextElementDependency extends ModuleDependency {
 			: Dependency.EXPORTS_OBJECT_REFERENCED;
 	}
 
+	/**
+	 * @param {ObjectSerializerContext} context context
+	 */
 	serialize(context) {
-		context.write(this.referencedExports);
+		const { write } = context;
+		write(this._typePrefix);
+		write(this._category);
+		write(this.referencedExports);
 		super.serialize(context);
 	}
 
+	/**
+	 * @param {ObjectDeserializerContext} context context
+	 */
 	deserialize(context) {
-		this.referencedExports = context.read();
+		const { read } = context;
+		this._typePrefix = read();
+		this._category = read();
+		this.referencedExports = read();
 		super.deserialize(context);
 	}
 }

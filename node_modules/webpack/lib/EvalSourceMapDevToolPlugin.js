@@ -8,6 +8,7 @@
 const { ConcatSource, RawSource } = require("webpack-sources");
 const ModuleFilenameHelpers = require("./ModuleFilenameHelpers");
 const NormalModule = require("./NormalModule");
+const RuntimeGlobals = require("./RuntimeGlobals");
 const SourceMapDevToolModuleOptionsPlugin = require("./SourceMapDevToolModuleOptionsPlugin");
 const JavascriptModulesPlugin = require("./javascript/JavascriptModulesPlugin");
 const ConcatenatedModule = require("./optimize/ConcatenatedModule");
@@ -17,6 +18,7 @@ const { makePathsAbsolute } = require("./util/identifier");
 /** @typedef {import("../declarations/WebpackOptions").DevTool} DevToolOptions */
 /** @typedef {import("../declarations/plugins/SourceMapDevToolPlugin").SourceMapDevToolPluginOptions} SourceMapDevToolPluginOptions */
 /** @typedef {import("./Compiler")} Compiler */
+/** @typedef {import("./NormalModule").SourceMap} SourceMap */
 
 /** @type {WeakMap<Source, Source>} */
 const cache = new WeakMap();
@@ -104,15 +106,15 @@ class EvalSourceMapDevToolPlugin {
 							return result(source);
 						}
 
-						/** @type {{ [key: string]: TODO; }} */
+						/** @type {SourceMap} */
 						let sourceMap;
 						let content;
 						if (source.sourceAndMap) {
 							const sourceAndMap = source.sourceAndMap(options);
-							sourceMap = sourceAndMap.map;
+							sourceMap = /** @type {SourceMap} */ (sourceAndMap.map);
 							content = sourceAndMap.source;
 						} else {
-							sourceMap = source.map(options);
+							sourceMap = /** @type {SourceMap} */ (source.map(options));
 							content = source.source();
 						}
 						if (!sourceMap) {
@@ -151,6 +153,9 @@ class EvalSourceMapDevToolPlugin {
 							}
 						);
 						sourceMap.sources = moduleFilenames;
+						if (options.noSources) {
+							sourceMap.sourcesContent = undefined;
+						}
 						sourceMap.sourceRoot = options.sourceRoot || "";
 						const moduleId = chunkGraph.getModuleId(m);
 						sourceMap.file = `${moduleId}.js`;
@@ -165,7 +170,15 @@ class EvalSourceMapDevToolPlugin {
 							) + `\n//# sourceURL=webpack-internal:///${moduleId}\n`; // workaround for chrome bug
 
 						return result(
-							new RawSource(`eval(${JSON.stringify(content + footer)});`)
+							new RawSource(
+								`eval(${
+									compilation.outputOptions.trustedTypes
+										? `${RuntimeGlobals.createScript}(${JSON.stringify(
+												content + footer
+										  )})`
+										: JSON.stringify(content + footer)
+								});`
+							)
 						);
 					}
 				);
@@ -181,6 +194,14 @@ class EvalSourceMapDevToolPlugin {
 					hash.update("EvalSourceMapDevToolPlugin");
 					hash.update("2");
 				});
+				if (compilation.outputOptions.trustedTypes) {
+					compilation.hooks.additionalModuleRuntimeRequirements.tap(
+						"EvalSourceMapDevToolPlugin",
+						(module, set, context) => {
+							set.add(RuntimeGlobals.createScript);
+						}
+					);
+				}
 			}
 		);
 	}

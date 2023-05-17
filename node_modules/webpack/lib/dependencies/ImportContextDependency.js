@@ -9,6 +9,9 @@ const makeSerializable = require("../util/makeSerializable");
 const ContextDependency = require("./ContextDependency");
 const ContextDependencyTemplateAsRequireCall = require("./ContextDependencyTemplateAsRequireCall");
 
+/** @typedef {import("../serialization/ObjectMiddleware").ObjectDeserializerContext} ObjectDeserializerContext */
+/** @typedef {import("../serialization/ObjectMiddleware").ObjectSerializerContext} ObjectSerializerContext */
+
 class ImportContextDependency extends ContextDependency {
 	constructor(options, range, valueRange) {
 		super(options);
@@ -25,19 +28,23 @@ class ImportContextDependency extends ContextDependency {
 		return "esm";
 	}
 
+	/**
+	 * @param {ObjectSerializerContext} context context
+	 */
 	serialize(context) {
 		const { write } = context;
 
-		write(this.range);
 		write(this.valueRange);
 
 		super.serialize(context);
 	}
 
+	/**
+	 * @param {ObjectDeserializerContext} context context
+	 */
 	deserialize(context) {
 		const { read } = context;
 
-		this.range = read();
 		this.valueRange = read();
 
 		super.deserialize(context);
