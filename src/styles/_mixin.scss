@@ -1,0 +1,51 @@
+@import url(_variables.scss);
+
+@mixin flex-aiCenter($display: flex, $align-items: center) {
+    display: $display;
+    align-items: $align-items;
+}
+
+@mixin font-14px ($font-style: normal, $font-weight: 500, $font-size: 14px, $line-height: 14px, $color: $purple){
+    font-size: $font-size;
+    font-style: $font-style;
+    font-weight: $font-weight;
+    line-height: $line-height;
+
+    color: $color;
+}
+
+@mixin font-16px ($font-style: normal, $font-weight: 500, $font-size: 16px, $line-height: 24px, $color: $grey){
+    font-size: $font-size;
+    font-style: $font-style;
+    font-weight: $font-weight;
+    line-height: $line-height;
+
+    color: $color;
+}
+
+@mixin font-16px ($font-style: normal, $font-weight: 500, $font-size: 16px, $line-height: 24px, $color: $grey){
+    font-size: $font-size;
+    font-style: $font-style;
+    font-weight: $font-weight;
+    line-height: $line-height;
+
+    color: $color;
+}
+
+@mixin font-32px ($font-style: normal, $font-weight: 700, $font-size: 32px, $line-height: 40px, $color: $dark-blue){
+    font-size: $font-size;
+    font-style: $font-style;
+    font-weight: $font-weight;
+    line-height: $line-height;
+
+    color: $color;
+}
+
+@mixin font-16px-lh-16px ($font-style: normal, $font-weight: 500, $font-size: 16px, $line-height: 16px, $color: $purple){
+    font-size: $font-size;
+    font-style: $font-style;
+    font-weight: $font-weight;
+    line-height: $line-height;
+
+    color: $color;
+}

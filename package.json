@@ -1,5 +1,5 @@
 {
-  "name": "name-project",
+  "name": "project2-qubly",
   "scripts": {
     "build": "webpack",
     "dev": "webpack serve --env develop"
@@ -18,5 +18,10 @@
   "dependencies": {
     "html-webpack-plugin": "^5.5.0",
     "normalize.css": "^8.0.1"
-  }
+  },
+  "version": "1.0.0",
+  "description": "Project 2 Qubly",
+  "main": "webpack.config.js",
+  "author": "",
+  "license": "ISC"
 }
